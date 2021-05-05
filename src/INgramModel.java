@@ -13,10 +13,23 @@ public interface INgramModel {
     public HashSet getVocab();
     
     /**
+     *  
+     * @param 
+     */
+    public List ngrams( int n, String text);
+    
+    
+    /**
      * update the N-gram model with words in the training data 
      * @param text - a word in the training data
      */
     public void update(String text);
+    
+    /**
+     *  
+     * @param 
+     */
+    public void updateFile(String file);
     
     /**
      * Given a context string, calculate the 
