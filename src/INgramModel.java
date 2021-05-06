@@ -6,17 +6,21 @@ import java.util.*;
  */
 public interface INgramModel {
     
+    
     /**
      * Return the vocabulary learned by the N-gram model 
      * @return a set of of vocabulary 
      */
-    public HashSet getVocab();
+    public HashSet<String> getVocab();
     
     /**
-     *  
-     * @param 
+     * The method convert a string to list of tuples of n-grams
+     * each tuple contains a context and a character token
+     * @param n - parameter of n-gram
+     * @param text - string being converted to n-grams 
+     * @return a list of tuples 
      */
-    public List ngrams( int n, String text);
+    public List<Tuple<String,String>> ngrams(int n, String text);
     
     
     /**
@@ -26,8 +30,9 @@ public interface INgramModel {
     public void update(String text);
     
     /**
-     *  
-     * @param 
+     * This method takes in a path of the file that contains the dictionary 
+     * and updates internal map with words learned  
+     * @param file - file path 
      */
     public void updateFile(String file);
     
@@ -40,11 +45,11 @@ public interface INgramModel {
     public double probability(String context, String character); 
     
     /**
-     * Generate a random character based on the context 
+     * Generate the most likely character based on the context 
      * @param context - a string represents of the context that precedes the predicted character 
      * @return a char that entails the context
      */
-    public String getRandomChar(String context); 
+    public String getChar(String context); 
     
     /**
      * Complete the word given the context

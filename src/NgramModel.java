@@ -4,77 +4,84 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
-public class NgramModel implements INgramModel{
+public class NgramModel implements INgramModel {
 
-    private int c;
-    private int k;
-    private HashMap<String, TreeMap<String, Integer>> nGramsDict;
-    private HashSet<String> vocab;
+    private int c; // c is the parameter in the Markov model, c = n - 1
+    private int k; // parameter for smoothening the probability 
+    private HashMap<String, TreeMap<String, Integer>> nGramsDict; 
+                              // internal data structure for storing the context 
+    private HashSet<String> vocab; // set that contains all vocabulary in the model
     
-    public NgramModel(int c, int k){
-        this.c=c;
-        this.k=k;
-        this.vocab= new HashSet<>();
-        this.nGramsDict=new HashMap<>();
+    public NgramModel(int c, int k) {
+        this.c = c;
+        this.k = k;
+        this.vocab = new HashSet<>();
+        this.nGramsDict = new HashMap<>();
     }
     
     @Override
-    public HashSet getVocab() {
+    public HashSet<String> getVocab() {
         return this.vocab;
     }
     
-    private String start_pad(int n) {
+    /**
+     * This is a helper method that returns a padded string
+     * @param n - number of "~" being padded 
+     * @return a padded string 
+     */
+    private String startPad(int n) {
         String out = "";
-        for (int i = 0; i < n; i++){
-            out+="~";
-         }
+        for (int i = 0; i < n; i++) {
+            out += "~";
+        }
         return out;
     }
     
     @Override
     public List<Tuple<String,String>> ngrams(int n, String text) {
-        List<Tuple<String,String>> n_grams = new ArrayList<>();
+        List<Tuple<String,String>> nGrams = new ArrayList<>();
         List<String> stack = new ArrayList<>();
-        String pad = this.start_pad(n);
-        if (n==0) {
+        String pad = this.startPad(n);
+        if (n == 0) {
             for (char ch:text.toCharArray()) {
-                Tuple<String,String> t = new Tuple<String, String>("", ""+ch);
-                n_grams.add(t);
+                Tuple<String,String> t = new Tuple<String, String>("", "" + ch);
+                nGrams.add(t);
             }
-            return n_grams;
+            return nGrams;
         }
         
         for (char ch:pad.toCharArray()) {
-            stack.add(""+ch);
+            stack.add("" + ch);
         }
         
         for (char ch: text.toCharArray()) {
             String tmp = "";
-            for (String s : stack){
-                tmp+=s;
+            for (String s : stack) {
+                tmp += s;
             }
-            Tuple<String,String> t = new Tuple<String, String>(tmp,ch+"");
-            n_grams.add(t);
+            Tuple<String,String> t = new Tuple<String, String>(tmp,ch + "");
+            nGrams.add(t);
             stack.remove(0);
-            stack.add(ch+""); 
+            stack.add(ch + ""); 
         }
-        return n_grams;
+        return nGrams;
     }
 
     @Override
     public void update(String text) {
         for (char ch: text.toCharArray()) {
-            this.vocab.add(ch+"");
+            this.vocab.add(ch + "");
         }
-        List<Tuple<String,String>> n_grams_li = this.ngrams(this.c, text);
-        for (Tuple<String,String> t: n_grams_li) {
+        List<Tuple<String,String>> nGramsLi = this.ngrams(this.c, text);
+        for (Tuple<String,String> t: nGramsLi) {
             String context = t.getLeft();
             String cha = t.getRight();
-            TreeMap chars_in_context = (TreeMap) this.nGramsDict.getOrDefault(context, new TreeMap());
-            int char_freqs = (int) chars_in_context.getOrDefault(cha, 0);
-            char_freqs+=1;
-            chars_in_context.put(cha,char_freqs);
-            this.nGramsDict.put(context, chars_in_context);             
+            TreeMap<String, Integer> charsInContext = 
+                    this.nGramsDict.getOrDefault(context, new TreeMap<String, Integer>());
+            int charFreqs = (int) charsInContext.getOrDefault(cha, 0);
+            charFreqs += 1;
+            charsInContext.put(cha,charFreqs);
+            this.nGramsDict.put(context, charsInContext);             
         } 
     }
     
@@ -87,7 +94,6 @@ public class NgramModel implements INgramModel{
                     //skip first line
                     br.readLine();
                     while (br.ready()) {
-                        //read each line and add them into the trie
                         String[] currLine = br.readLine().trim().split("\\s+");
                         if (currLine.length == 2) {
                             String word = currLine[1].toLowerCase();
@@ -114,14 +120,14 @@ public class NgramModel implements INgramModel{
                 sum = sum + freq; 
             }
             int freq = charFreqsInContext.getOrDefault(character, 0);
-            Double result = 1.0 * (freq + k)/ (1.0 * (sum + k * vocab.size())); 
+            Double result = 1.0 * (freq + k) / (1.0 * (sum + k * vocab.size())); 
             return result; 
         } 
         return 1 / (1.0 * k * vocab.size());
     }
 
     @Override
-    public String getRandomChar(String context) {
+    public String getChar(String context) {
         // return the most likely character
         if (nGramsDict.containsKey(context)) {
             TreeMap<String, Integer> charFreqsInContext = nGramsDict.get(context);
@@ -143,11 +149,11 @@ public class NgramModel implements INgramModel{
     @Override
     public String getWord(String context) {
         String word = "";
-        word+=context;
+        word += context;
         while (nGramsDict.containsKey(context)) {
-            String newChar = getRandomChar(context);  
-            word+=newChar; 
-            context = word.substring(word.length()-c, word.length());
+            String newChar = getChar(context);  
+            word += newChar; 
+            context = word.substring(word.length() - c, word.length());
         }
         
         return word.replace("~", "");
